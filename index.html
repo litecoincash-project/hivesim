@@ -1,0 +1,152 @@
+<html>
+	<head>
+		<title>Litecoin Cash : Hive mining simulator</title>
+		<link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
+		<style>
+			body {
+				font-family: 'Nunito', sans-serif;
+				background-color: #3A3A4F;
+				color: #eee;
+			}
+		</style>
+		<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+		<script src="https://code.highcharts.com/highcharts.js"></script>
+		<script src="https://code.highcharts.com/modules/exporting.js"></script>
+		<script src="https://code.highcharts.com/modules/export-data.js"></script>
+		<script src="app.js?v=7" /></script>
+		<script>
+			var running = false;
+			var runTimer;
+			var chartSeries;
+			function ToggleRunStop() {
+				running = !running;
+				if (running) {
+					document.getElementById("runstop").value="Stop";
+					StepSim();
+					runTimer = window.setInterval(StepSim, 200);
+				} else {
+					document.getElementById("runstop").value="Run";
+					window.clearTimeout(runTimer);
+				}
+			}
+
+			function StepSim() {
+				var numBlocks=document.getElementById("numBlocks").value;
+				var maxTarget=document.getElementById("maxTarget").value;
+				var beeMatBlocks=document.getElementById("beeMatBlocks").value;
+				var beeLifeSpanBlocks=document.getElementById("beeLifeSpanBlocks").value;
+				var emaWindowSize=document.getElementById("emaWindowSize").value;
+				var emaSpacingTarget=document.getElementById("emaSpacingTarget").value;
+				var beeAddChance=document.getElementById("beeAddChance").value;
+				var beeAddQuant=document.getElementById("beeAddQuant").value;
+				app.Simulate(AddChartPoint, numBlocks, maxTarget, beeMatBlocks, beeLifeSpanBlocks, emaWindowSize, emaSpacingTarget, beeAddChance, beeAddQuant);
+				$('#theMightyGraph').highcharts().redraw();
+			}
+
+			function AddChartPoint(x, y1, y2, y3) {
+				$('#theMightyGraph').highcharts().series[0].addPoint([parseInt(x), parseInt(y1)], false);
+				$('#theMightyGraph').highcharts().series[1].addPoint([parseInt(x), parseInt(y2)], false);
+				$('#theMightyGraph').highcharts().series[2].addPoint([parseInt(x), parseInt(y3)], false);
+			}
+
+			function ClearChart() {
+				$('#theMightyGraph').highcharts().series[0].setData([]);
+				$('#theMightyGraph').highcharts().series[1].setData([]);
+				$('#theMightyGraph').highcharts().series[2].setData([]);
+			}
+
+			function DoChart() {
+				Highcharts.setOptions({
+				    global: {
+					useUTC: false
+				    }
+				});
+
+				Highcharts.chart('theMightyGraph', {
+				    chart: {
+					zoomType: 'x'
+				    },
+				    title: {
+					text: ''
+				    },
+				    xAxis: {
+					title: {
+					    text: 'Block height'
+					},
+					tickPixelInterval: 100
+				    },
+				    yAxis: [{
+					title: {
+					    text: 'Difficulty',
+					},
+				    }, {
+					title: {
+					    text: 'Bee population',
+					},
+					opposite: true
+				    }, {
+					title: {
+					    text: 'Orphans',
+					},
+					opposite: true
+				    }],
+				    tooltip: {
+					shared: true
+				    },
+				    legend: {
+					layout: 'vertical',
+					align: 'left',
+					x: 60,
+					verticalAlign: 'top',
+					y: 10,
+					floating: true,
+					backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+				    },
+				    series: [{
+					name: 'Difficulty',
+					type: 'spline',
+					yAxis: 0,
+
+				    },{
+					name: 'Bee pop',
+					type: 'spline',
+					yAxis: 1
+				    },{
+					name: 'Orphans',
+					type: 'column',
+					yAxis: 2
+				    }]
+				});
+			}
+		</script>
+	</head>
+	<body onload="DoChart()">
+		<h1><img src="hive.png" width="32" height="32" style="margin-bottom:-8px;"> Litecoin Cash : Hive mining simulator</h1>
+		<table>
+			<tr>
+				<td valign="top">
+					<table>
+						<tr><td colspan="2"><b>Simulation parameters</b><br><br></td></tr>
+						<tr><td>Blocks to simulate per step</td><td><input type="text" id="numBlocks" value="24"></td></tr>
+						<tr><td>Chance to add a bee</td><td><input type="test" id="beeAddChance" value="0.05"> / 1.0</td></tr>
+						<tr><td>Max bees to add when adding</td><td><input type="test" id="beeAddQuant" value="5"></td></tr>
+						<tr><td colspan="2"><br><b>Consensus rules: Bee lifetime</b><br><br></td></tr>
+						<tr><td>Time till a new bee matures</td><td><input type="test" id="beeMatBlocks" value="576"> blocks</td></tr>
+						<tr><td>Bee lifespan after maturation</td><td><input type="test" id="beeLifeSpanBlocks" value="4032"> blocks</td></tr>
+						<tr><td colspan="2"><br><b>Consensus rules: beeHashTarget adjustment</b><br><br></td></tr>
+						<tr><td>Target limit (easiest target)</td><td><input type="test" id="maxTarget" value="0fffffffffffffffffffffffffffffff"> (uint_256)</td></tr>
+						<tr><td>EMA window size</td><td><input type="test" id="emaWindowSize" value="30"></td></tr>
+						<tr><td>EMA spacing target</td><td><input type="test" id="emaSpacingTarget" value="2"></td></tr>
+						<tr><td colspan="2"><br><input type="button" id="runstop" onclick="ToggleRunStop()" value="Run"> <input type="button" onclick="StepSim()" value="Step"> <input type="button" onclick="ClearChart();app.Reset()" value="Reset"> <input type="button" onclick="app.AddBees(document.getElementById('numBees').value)" value="Manually Add"> <input type="text" id="numBees" value="200"> bees</td></tr>
+					</table>
+				</td>
+				<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+				<td valign="top">
+					<div id="results"></div>
+				</td>
+			</tr>
+		</table>
+		<br>
+		<div id="theMightyGraph" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+	</body>
+</html>
